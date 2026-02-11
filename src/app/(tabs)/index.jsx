@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -6,10 +6,12 @@ import {
   ScrollView,
   Alert,
   Vibration,
-  Linking,
+  Animated,
+  Dimensions,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   useFonts,
   Inter_400Regular,
@@ -18,46 +20,34 @@ import {
   Inter_700Bold,
 } from "@expo-google-fonts/inter";
 import {
-  Shield,
   Phone,
-  Volume2,
   MapPin,
   Users,
-  AlertTriangle,
-  PhoneCall,
-  Mic,
-  Eye,
   Activity,
-  Sun,
-  Moon,
-  Monitor,
-  ScanFace,
+  Eye,
+  Bell,
+  Shield,
+  AlertCircle,
 } from "lucide-react-native";
 import { router } from "expo-router";
 import { useTheme } from "@/utils/useTheme";
-import { useThemeContext } from "@/utils/ThemeContext";
 import LoadingScreen from "@/components/LoadingScreen";
-import ActionButton from "@/components/ActionButton";
-import AlarmModal from "@/components/AlarmModal";
 import SOSCameraCapture from "@/components/SOSCameraCapture";
-import VerificationRequestBanner from "@/components/VerificationRequestBanner";
-import TopNavbar from "@/components/TopNavbar";
 import { triggerSOS } from "@/services/sosService";
 import { getCurrentLocation } from "@/services/locationService";
-import { getPendingVerificationMarkers } from "@/services/safetyMapService";
 
-export default function SafetyHomeScreen() {
+const { width } = Dimensions.get('window');
+
+export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [isSOSActive, setIsSOSActive] = useState(false);
   const [sosCountdown, setSOSCountdown] = useState(5);
-  const [safetyStatus, setSafetyStatus] = useState("Safe");
-  const [nearbyResources, setNearbyResources] = useState([]);
-  const [isAlarmActive, setIsAlarmActive] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
-  const [capturedPhotoUri, setCapturedPhotoUri] = useState(null);
-  const [pendingVerifications, setPendingVerifications] = useState([]);
   const theme = useTheme();
-  const { toggleTheme, themeMode } = useThemeContext();
+  
+  // Pulse animation for SOS button
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const glowAnim = useRef(new Animated.Value(0)).current;
 
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
@@ -67,47 +57,38 @@ export default function SafetyHomeScreen() {
   });
 
   useEffect(() => {
-    // Simulate fetching nearby safety resources with phone numbers
-    setNearbyResources([
-      { 
-        type: "Police Station", 
-        distance: "0.8 km", 
-        name: "Central Police",
-        phone: "100" // Emergency police number
-      },
-      { 
-        type: "Hospital", 
-        distance: "1.2 km", 
-        name: "City General",
-        phone: "102" // Emergency ambulance number
-      },
-      { 
-        type: "Safe Haven", 
-        distance: "0.3 km", 
-        name: "Community Center",
-        phone: "1091" // Women helpline number
-      },
-    ]);
+    // Start continuous pulse animation for SOS button
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.05,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
 
-    // Check for pending verifications
-    checkPendingVerifications();
+    // Glow animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowAnim, {
+          toValue: 1,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(glowAnim, {
+          toValue: 0,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
   }, []);
-
-  const checkPendingVerifications = async () => {
-    try {
-      const location = await getCurrentLocation();
-      if (location) {
-        const pending = await getPendingVerificationMarkers(location, 0.5);
-        setPendingVerifications(pending);
-        
-        if (pending.length > 0) {
-          console.log(`📍 Found ${pending.length} markers pending verification nearby`);
-        }
-      }
-    } catch (error) {
-      console.error('Error checking pending verifications:', error);
-    }
-  };
 
   useEffect(() => {
     let interval;
@@ -116,7 +97,6 @@ export default function SafetyHomeScreen() {
         setSOSCountdown(prev => prev - 1);
       }, 1000);
     } else if (isSOSActive && sosCountdown === 0) {
-      // Show camera to capture photo
       setShowCamera(true);
     }
     return () => clearInterval(interval);
@@ -124,32 +104,23 @@ export default function SafetyHomeScreen() {
 
   const handleCameraCapture = (photoUri) => {
     setShowCamera(false);
-    setCapturedPhotoUri(photoUri);
-    
-    // Continue with SOS activation
     handleSOSActivation(photoUri);
-    
-    // Reset countdown
     setIsSOSActive(false);
     setSOSCountdown(5);
   };
 
   const handleSOSPress = () => {
     if (isSOSActive) {
-      // Cancel SOS
       setIsSOSActive(false);
       setSOSCountdown(5);
       return;
     }
-
-    // Start SOS countdown
     setIsSOSActive(true);
     Vibration.vibrate([100, 200, 100]);
   };
 
   const handleSOSActivation = async (photoUri = null) => {
     try {
-      // Show loading alert
       Alert.alert(
         "🚨 SOS Activating",
         "Sending emergency alerts...",
@@ -157,10 +128,7 @@ export default function SafetyHomeScreen() {
         { cancelable: false }
       );
 
-      // Trigger SOS with all emergency protocols (including photo if captured)
       const result = await triggerSOS(photoUri);
-
-      // Build success message
       let message = "Emergency protocols activated:\n\n";
       
       if (result.photoCapture && !result.photoCapture.skipped) {
@@ -189,90 +157,14 @@ export default function SafetyHomeScreen() {
         message += `\n⚠️ Location unavailable`;
       }
 
-      // Show success alert
-      Alert.alert(
-        "🚨 SOS Alert Sent!",
-        message,
-        [{ text: "OK" }]
-      );
-
+      Alert.alert("🚨 SOS Alert Sent!", message, [{ text: "OK" }]);
     } catch (error) {
       console.error('SOS activation failed:', error);
-      
-      // Show error alert
       Alert.alert(
         "SOS Error",
-        error.message || "Failed to send emergency alert. Please ensure you have added emergency contacts in your profile and granted necessary permissions.",
+        error.message || "Failed to send emergency alert.",
         [{ text: "OK" }]
       );
-    }
-  };
-
-  const handleFakeCall = () => {
-    // Navigate to fake call screen
-    router.push("/fake-call");
-  };
-
-  const handleLoudAlarm = () => {
-    // Activate the alarm modal
-    setIsAlarmActive(true);
-    Vibration.vibrate([500, 200, 500, 200, 500]);
-  };
-
-  const handleCallResource = (resource) => {
-    Alert.alert(
-      `Call ${resource.name}?`,
-      `Do you want to call ${resource.type} at ${resource.phone}?`,
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Call Now",
-          onPress: async () => {
-            try {
-              const phoneUrl = `tel:${resource.phone}`;
-              const canOpen = await Linking.canOpenURL(phoneUrl);
-              
-              if (canOpen) {
-                await Linking.openURL(phoneUrl);
-              } else {
-                Alert.alert("Error", "Cannot make phone calls on this device");
-              }
-            } catch (error) {
-              console.error("Error making call:", error);
-              Alert.alert("Error", "Failed to make call. Please try again.");
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const getThemeIcon = () => {
-    switch (themeMode) {
-      case 'light':
-        return Sun;
-      case 'dark':
-        return Moon;
-      case 'system':
-        return Monitor;
-      default:
-        return Sun;
-    }
-  };
-
-  const getThemeLabel = () => {
-    switch (themeMode) {
-      case 'light':
-        return 'Light';
-      case 'dark':
-        return 'Dark';
-      case 'system':
-        return 'Auto';
-      default:
-        return 'Auto';
     }
   };
 
@@ -280,20 +172,18 @@ export default function SafetyHomeScreen() {
     return <LoadingScreen />;
   }
 
+  const glowOpacity = glowAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.3, 0.8],
+  });
+
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <StatusBar style={theme.colors.statusBar} />
+    <LinearGradient
+      colors={theme.colors.backgroundGradient}
+      style={{ flex: 1 }}
+    >
+      <StatusBar style="light" />
 
-      {/* Top Navbar */}
-      <TopNavbar title="Saheli" />
-
-      {/* Alarm Modal */}
-      <AlarmModal 
-        visible={isAlarmActive} 
-        onClose={() => setIsAlarmActive(false)} 
-      />
-
-      {/* SOS Camera Capture */}
       <SOSCameraCapture
         visible={showCamera}
         onCapture={handleCameraCapture}
@@ -307,476 +197,468 @@ export default function SafetyHomeScreen() {
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{
-          paddingTop: 16,
+          paddingTop: insets.top + 24,
           paddingHorizontal: 24,
-          paddingBottom: insets.bottom + 16,
+          paddingBottom: insets.bottom + 100,
         }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header with Theme Toggle */}
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "flex-end",
-            alignItems: "center",
-            marginBottom: 32,
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            {/* Theme Toggle Button */}
-            <TouchableOpacity
-              onPress={toggleTheme}
+        {/* Header */}
+        <View style={{ alignItems: 'center', marginBottom: 40 }}>
+          <Text
+            style={{
+              fontFamily: "Inter_700Bold",
+              fontSize: 36,
+              color: theme.colors.neonCyan,
+              letterSpacing: 2,
+              textShadowColor: theme.colors.glowColor,
+              textShadowOffset: { width: 0, height: 0 },
+              textShadowRadius: 20,
+            }}
+          >
+            MAITRI
+          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+            <Shield size={16} color={theme.colors.neonCyan} strokeWidth={2} />
+            <Text
               style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-                backgroundColor: theme.colors.elevated,
-                justifyContent: "center",
-                alignItems: "center",
-                marginRight: 8,
-              }}
-              data-testid="theme-toggle-button"
-            >
-              {(() => {
-                const ThemeIcon = getThemeIcon();
-                return <ThemeIcon size={20} color={theme.colors.text} strokeWidth={2} />;
-              })()}
-            </TouchableOpacity>
-
-            {/* Safety Status */}
-            <View
-              style={{
-                backgroundColor: theme.colors.safe,
-                paddingHorizontal: 12,
-                paddingVertical: 6,
-                borderRadius: 16,
+                fontFamily: "Inter_400Regular",
+                fontSize: 14,
+                color: theme.colors.textSecondary,
+                marginLeft: 6,
+                letterSpacing: 1,
               }}
             >
-              <Text
-                style={{
-                  fontFamily: "Inter_500Medium",
-                  fontSize: 12,
-                  color: "#FFFFFF",
-                }}
-              >
-                {safetyStatus}
-              </Text>
-            </View>
+              Your AI-Powered Safety Guardian
+            </Text>
           </View>
         </View>
 
-        {/* Verification Request Banner */}
-        <VerificationRequestBanner
-          pendingCount={pendingVerifications.length}
-          onPress={() => router.push("/(tabs)/map")}
-          onDismiss={() => setPendingVerifications([])}
-        />
-
-        {/* Main SOS Button */}
-        <View style={{ alignItems: "center", marginBottom: 40 }}>
-          <TouchableOpacity
-            data-testid="sos-button"
+        {/* Main SOS Button with Glow */}
+        <View style={{ alignItems: "center", marginBottom: 50 }}>
+          <Animated.View
             style={{
-              width: 200,
-              height: 200,
-              borderRadius: 100,
-              backgroundColor: isSOSActive ? theme.colors.warning : theme.colors.emergency,
-              justifyContent: "center",
-              alignItems: "center",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
-              elevation: 8,
+              transform: [{ scale: pulseAnim }],
             }}
-            onPress={handleSOSPress}
-            activeOpacity={0.8}
           >
-            {isSOSActive ? (
-              <View style={{ alignItems: "center" }}>
-                <Text
-                  style={{
-                    fontFamily: "Inter_700Bold",
-                    fontSize: 36,
-                    color: "#FFFFFF",
-                    marginBottom: 8,
-                  }}
-                >
-                  {sosCountdown}
-                </Text>
-                <Text
-                  style={{
-                    fontFamily: "Inter_500Medium",
-                    fontSize: 12,
-                    color: "#FFFFFF",
-                  }}
-                >
-                  TAP TO CANCEL
-                </Text>
-              </View>
-            ) : (
-              <View style={{ alignItems: "center" }}>
-                <Shield size={48} color="#FFFFFF" strokeWidth={2} />
-                <Text
-                  style={{
-                    fontFamily: "Inter_700Bold",
-                    fontSize: 18,
-                    color: "#FFFFFF",
-                    marginTop: 8,
-                  }}
-                >
-                  SOS
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
+            {/* Outer glow ring */}
+            <Animated.View
+              style={{
+                position: 'absolute',
+                width: 240,
+                height: 240,
+                borderRadius: 120,
+                backgroundColor: 'transparent',
+                borderWidth: 3,
+                borderColor: theme.colors.neonCyan,
+                opacity: glowOpacity,
+                shadowColor: theme.colors.neonCyan,
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 1,
+                shadowRadius: 30,
+                elevation: 10,
+              }}
+            />
+            
+            <TouchableOpacity
+              data-testid="sos-button"
+              onPress={handleSOSPress}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={isSOSActive ? ['#FFD700', '#FF8C00'] : theme.colors.sosGradient}
+                style={{
+                  width: 220,
+                  height: 220,
+                  borderRadius: 110,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  shadowColor: isSOSActive ? '#FFD700' : theme.colors.neonPink,
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowOpacity: 0.8,
+                  shadowRadius: 25,
+                  elevation: 15,
+                }}
+              >
+                <View style={{
+                  width: 190,
+                  height: 190,
+                  borderRadius: 95,
+                  backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}>
+                  {isSOSActive ? (
+                    <View style={{ alignItems: "center" }}>
+                      <Text
+                        style={{
+                          fontFamily: "Inter_700Bold",
+                          fontSize: 52,
+                          color: "#FFFFFF",
+                          marginBottom: 8,
+                        }}
+                      >
+                        {sosCountdown}
+                      </Text>
+                      <Text
+                        style={{
+                          fontFamily: "Inter_500Medium",
+                          fontSize: 13,
+                          color: "#FFFFFF",
+                          letterSpacing: 1,
+                        }}
+                      >
+                        TAP TO CANCEL
+                      </Text>
+                    </View>
+                  ) : (
+                    <View style={{ alignItems: "center" }}>
+                      <AlertCircle size={60} color="#FFFFFF" strokeWidth={2.5} />
+                      <Text
+                        style={{
+                          fontFamily: "Inter_700Bold",
+                          fontSize: 28,
+                          color: "#FFFFFF",
+                          marginTop: 12,
+                          letterSpacing: 3,
+                        }}
+                      >
+                        SOS
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
 
           <Text
             style={{
               fontFamily: "Inter_400Regular",
-              fontSize: 14,
+              fontSize: 13,
               color: theme.colors.textSecondary,
               textAlign: "center",
-              marginTop: 16,
+              marginTop: 20,
               lineHeight: 20,
             }}
           >
-            Hold to activate emergency protocol{"\n"}
-            Alerts contacts & authorities instantly
+            Press for instant emergency alert to all{"\n"}
+            trusted contacts
           </Text>
         </View>
 
-        {/* Quick Actions */}
-        <View style={{ marginBottom: 32 }}>
-          <Text
-            style={{
-              fontFamily: "Inter_600SemiBold",
-              fontSize: 18,
-              color: theme.colors.text,
-              marginBottom: 16,
-            }}
-          >
-            Quick Actions
-          </Text>
+        {/* Quick Access Section */}
+        <View style={{ marginBottom: 40 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+            <View style={{ height: 2, flex: 1, backgroundColor: theme.colors.borderLight }} />
+            <Text
+              style={{
+                fontFamily: "Inter_600SemiBold",
+                fontSize: 16,
+                color: theme.colors.text,
+                marginHorizontal: 16,
+                letterSpacing: 2,
+                textTransform: 'uppercase',
+              }}
+            >
+              Quick Access
+            </Text>
+            <View style={{ height: 2, flex: 1, backgroundColor: theme.colors.borderLight }} />
+          </View>
 
-          <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
+          {/* 2x2 Grid */}
+          <View style={{ flexDirection: 'row', gap: 16, marginBottom: 16 }}>
+            {/* Fake Call */}
             <TouchableOpacity
               data-testid="fake-call-button"
-              style={{
-                flex: 1,
-                backgroundColor: theme.colors.elevated,
-                borderRadius: 12,
-                padding: 16,
-                alignItems: "center",
-              }}
-              onPress={handleFakeCall}
+              style={{ flex: 1 }}
+              onPress={() => router.push("/fake-call")}
+              activeOpacity={0.8}
             >
-              <PhoneCall size={24} color={theme.colors.text} strokeWidth={1.5} />
-              <Text
+              <LinearGradient
+                colors={['rgba(255, 45, 149, 0.2)', 'rgba(156, 39, 255, 0.1)']}
                 style={{
-                  fontFamily: "Inter_500Medium",
-                  fontSize: 12,
-                  color: theme.colors.text,
-                  marginTop: 8,
-                  textAlign: "center",
+                  borderRadius: 20,
+                  padding: 20,
+                  alignItems: 'center',
+                  borderWidth: 1,
+                  borderColor: theme.colors.borderLight,
+                  minHeight: 140,
+                  justifyContent: 'center',
                 }}
               >
-                Fake Call
-              </Text>
+                <View style={{
+                  width: 50,
+                  height: 50,
+                  borderRadius: 25,
+                  backgroundColor: 'rgba(255, 45, 149, 0.2)',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  marginBottom: 12,
+                }}>
+                  <Phone size={26} color={theme.colors.neonPink} strokeWidth={2} />
+                </View>
+                <Text
+                  style={{
+                    fontFamily: "Inter_600SemiBold",
+                    fontSize: 15,
+                    color: theme.colors.text,
+                    textAlign: 'center',
+                  }}
+                >
+                  Fake Call
+                </Text>
+              </LinearGradient>
             </TouchableOpacity>
 
+            {/* Live Track */}
             <TouchableOpacity
-              data-testid="loud-alarm-button"
-              style={{
-                flex: 1,
-                backgroundColor: theme.colors.elevated,
-                borderRadius: 12,
-                padding: 16,
-                alignItems: "center",
-              }}
-              onPress={handleLoudAlarm}
-            >
-              <Volume2 size={24} color={theme.colors.text} strokeWidth={1.5} />
-              <Text
-                style={{
-                  fontFamily: "Inter_500Medium",
-                  fontSize: 12,
-                  color: theme.colors.text,
-                  marginTop: 8,
-                  textAlign: "center",
-                }}
-              >
-                Loud Alarm
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={{ flexDirection: "row", gap: 12 }}>
-            <TouchableOpacity
-              style={{
-                flex: 1,
-                backgroundColor: theme.colors.elevated,
-                borderRadius: 12,
-                padding: 16,
-                alignItems: "center",
-              }}
+              style={{ flex: 1 }}
               onPress={() => router.push("/(tabs)/map")}
+              activeOpacity={0.8}
             >
-              <MapPin size={24} color={theme.colors.text} strokeWidth={1.5} />
-              <Text
+              <LinearGradient
+                colors={['rgba(0, 229, 255, 0.2)', 'rgba(156, 39, 255, 0.1)']}
                 style={{
-                  fontFamily: "Inter_500Medium",
-                  fontSize: 12,
-                  color: theme.colors.text,
-                  marginTop: 8,
-                  textAlign: "center",
+                  borderRadius: 20,
+                  padding: 20,
+                  alignItems: 'center',
+                  borderWidth: 1,
+                  borderColor: theme.colors.borderLight,
+                  minHeight: 140,
+                  justifyContent: 'center',
                 }}
               >
-                Safe Routes
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={{
-                flex: 1,
-                backgroundColor: theme.colors.elevated,
-                borderRadius: 12,
-                padding: 16,
-                alignItems: "center",
-              }}
-              onPress={() => router.push("/(tabs)/community")}
-            >
-              <Users size={24} color={theme.colors.text} strokeWidth={1.5} />
-              <Text
-                style={{
-                  fontFamily: "Inter_500Medium",
-                  fontSize: 12,
-                  color: theme.colors.text,
-                  marginTop: 8,
-                  textAlign: "center",
-                }}
-              >
-                Community
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={{ flexDirection: "row", gap: 12, marginTop: 12 }}>
-            <TouchableOpacity
-              data-testid="deepfake-analyzer-button"
-              style={{
-                flex: 1,
-                backgroundColor: theme.colors.elevated,
-                borderRadius: 12,
-                padding: 16,
-                alignItems: "center",
-              }}
-              onPress={() => router.push("/deepfake-analyzer")}
-            >
-              <ScanFace size={24} color={theme.colors.text} strokeWidth={1.5} />
-              <Text
-                style={{
-                  fontFamily: "Inter_500Medium",
-                  fontSize: 12,
-                  color: theme.colors.text,
-                  marginTop: 8,
-                  textAlign: "center",
-                }}
-              >
-                Deepfake Analyzer
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Safety Status */}
-        <View style={{ marginBottom: 32 }}>
-          <Text
-            style={{
-              fontFamily: "Inter_600SemiBold",
-              fontSize: 18,
-              color: theme.colors.text,
-              marginBottom: 16,
-            }}
-          >
-            Current Status
-          </Text>
-
-          <View
-            style={{
-              backgroundColor: theme.colors.elevated,
-              borderRadius: 12,
-              padding: 16,
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
-              <View
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 16,
-                  backgroundColor: theme.colors.safe,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  marginRight: 12,
-                }}
-              >
-                <Eye size={16} color="#FFFFFF" strokeWidth={2} />
-              </View>
-              <View style={{ flex: 1 }}>
+                <View style={{
+                  width: 50,
+                  height: 50,
+                  borderRadius: 25,
+                  backgroundColor: 'rgba(0, 229, 255, 0.2)',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  marginBottom: 12,
+                }}>
+                  <MapPin size={26} color={theme.colors.neonCyan} strokeWidth={2} />
+                </View>
                 <Text
                   style={{
-                    fontFamily: "Inter_500Medium",
-                    fontSize: 14,
+                    fontFamily: "Inter_600SemiBold",
+                    fontSize: 15,
                     color: theme.colors.text,
+                    textAlign: 'center',
                   }}
                 >
-                  AI Monitoring: Active
+                  Live Track
                 </Text>
-                <Text
-                  style={{
-                    fontFamily: "Inter_400Regular",
-                    fontSize: 12,
-                    color: theme.colors.textSecondary,
-                  }}
-                >
-                  Scanning environment for threats
-                </Text>
-              </View>
-            </View>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
 
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <View
+          <View style={{ flexDirection: 'row', gap: 16 }}>
+            {/* Safe Routes */}
+            <TouchableOpacity
+              style={{ flex: 1 }}
+              onPress={() => router.push("/(tabs)/map")}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={['rgba(0, 229, 160, 0.2)', 'rgba(0, 191, 165, 0.1)']}
                 style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 16,
-                  backgroundColor: theme.colors.safe,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  marginRight: 12,
+                  borderRadius: 20,
+                  padding: 20,
+                  alignItems: 'center',
+                  borderWidth: 1,
+                  borderColor: theme.colors.borderLight,
+                  minHeight: 140,
+                  justifyContent: 'center',
                 }}
               >
-                <Activity size={16} color="#FFFFFF" strokeWidth={2} />
-              </View>
-              <View style={{ flex: 1 }}>
+                <View style={{
+                  width: 50,
+                  height: 50,
+                  borderRadius: 25,
+                  backgroundColor: 'rgba(0, 229, 160, 0.2)',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  marginBottom: 12,
+                }}>
+                  <Shield size={26} color={theme.colors.safe} strokeWidth={2} />
+                </View>
                 <Text
                   style={{
-                    fontFamily: "Inter_500Medium",
-                    fontSize: 14,
+                    fontFamily: "Inter_600SemiBold",
+                    fontSize: 15,
                     color: theme.colors.text,
+                    textAlign: 'center',
                   }}
                 >
-                  Location Sharing: On
+                  Safe Routes
                 </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            {/* Emergency Contacts */}
+            <TouchableOpacity
+              style={{ flex: 1 }}
+              onPress={() => router.push("/emergency-contacts")}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={['rgba(156, 39, 255, 0.2)', 'rgba(75, 200, 230, 0.1)']}
+                style={{
+                  borderRadius: 20,
+                  padding: 20,
+                  alignItems: 'center',
+                  borderWidth: 1,
+                  borderColor: theme.colors.borderLight,
+                  minHeight: 140,
+                  justifyContent: 'center',
+                }}
+              >
+                <View style={{
+                  width: 50,
+                  height: 50,
+                  borderRadius: 25,
+                  backgroundColor: 'rgba(156, 39, 255, 0.2)',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  marginBottom: 12,
+                }}>
+                  <Users size={26} color={theme.colors.neonPurple} strokeWidth={2} />
+                </View>
                 <Text
                   style={{
-                    fontFamily: "Inter_400Regular",
-                    fontSize: 12,
-                    color: theme.colors.textSecondary,
+                    fontFamily: "Inter_600SemiBold",
+                    fontSize: 15,
+                    color: theme.colors.text,
+                    textAlign: 'center',
                   }}
                 >
-                  Trusted contacts can see your location
+                  Contacts
                 </Text>
-              </View>
-            </View>
+              </LinearGradient>
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Nearby Resources */}
-        <View>
-          <Text
-            style={{
-              fontFamily: "Inter_600SemiBold",
-              fontSize: 18,
-              color: theme.colors.text,
-              marginBottom: 16,
-            }}
-          >
-            Nearby Safety Resources
-          </Text>
+        {/* Safety Insight Panel */}
+        <LinearGradient
+          colors={['rgba(30, 35, 60, 0.6)', 'rgba(20, 25, 50, 0.4)']}
+          style={{
+            borderRadius: 20,
+            padding: 24,
+            borderWidth: 1,
+            borderColor: theme.colors.borderLight,
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+            <Shield size={20} color={theme.colors.neonCyan} strokeWidth={2} />
+            <Text
+              style={{
+                fontFamily: "Inter_600SemiBold",
+                fontSize: 16,
+                color: theme.colors.text,
+                marginLeft: 10,
+                letterSpacing: 1,
+              }}
+            >
+              Safety Insight
+            </Text>
+          </View>
 
-          {nearbyResources.map((resource, index) => (
-            <View key={index}>
-              <TouchableOpacity
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingVertical: 12,
-                }}
-                onPress={() => handleCallResource(resource)}
-                data-testid={`call-resource-${index}`}
-              >
-                <View
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 16,
-                    backgroundColor: theme.colors.buttonBackground,
-                    justifyContent: "center",
-                    alignItems: "center",
-                    marginRight: 12,
-                  }}
-                >
-                  <Shield size={16} color={theme.colors.text} strokeWidth={2} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      fontFamily: "Inter_500Medium",
-                      fontSize: 14,
-                      color: theme.colors.text,
-                      marginBottom: 2,
-                    }}
-                  >
-                    {resource.name}
-                  </Text>
-                  <Text
-                    style={{
-                      fontFamily: "Inter_400Regular",
-                      fontSize: 12,
-                      color: theme.colors.textSecondary,
-                    }}
-                  >
-                    {resource.type} • {resource.distance}
-                  </Text>
-                </View>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    backgroundColor: theme.colors.success,
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 16,
-                  }}
-                >
-                  <Phone size={14} color="#FFFFFF" strokeWidth={1.5} />
-                  <Text
-                    style={{
-                      fontFamily: "Inter_500Medium",
-                      fontSize: 12,
-                      color: "#FFFFFF",
-                      marginLeft: 4,
-                    }}
-                  >
-                    Call
-                  </Text>
-                </View>
-              </TouchableOpacity>
-              {index < nearbyResources.length - 1 && (
-                <View
-                  style={{
-                    height: 1,
-                    backgroundColor: theme.colors.divider,
-                    marginLeft: 44,
-                  }}
-                />
-              )}
+          {/* AI Monitoring Status */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+            <View style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: 'rgba(0, 229, 160, 0.2)',
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginRight: 12,
+            }}>
+              <Eye size={20} color={theme.colors.safe} strokeWidth={2} />
             </View>
-          ))}
-        </View>
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontFamily: "Inter_500Medium",
+                  fontSize: 14,
+                  color: theme.colors.text,
+                  marginBottom: 2,
+                }}
+              >
+                AI-powered location monitoring active
+              </Text>
+              <Text
+                style={{
+                  fontFamily: "Inter_400Regular",
+                  fontSize: 12,
+                  color: theme.colors.textSecondary,
+                }}
+              >
+                Your safety network is connected and ready 24/7
+              </Text>
+            </View>
+            <View style={{
+              width: 8,
+              height: 8,
+              borderRadius: 4,
+              backgroundColor: theme.colors.safe,
+              shadowColor: theme.colors.safe,
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0.8,
+              shadowRadius: 6,
+            }} />
+          </View>
+
+          {/* Network Connection Status */}
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: 'rgba(0, 229, 255, 0.2)',
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginRight: 12,
+            }}>
+              <Activity size={20} color={theme.colors.neonCyan} strokeWidth={2} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontFamily: "Inter_500Medium",
+                  fontSize: 14,
+                  color: theme.colors.text,
+                  marginBottom: 2,
+                }}
+              >
+                Network Connection
+              </Text>
+              <Text
+                style={{
+                  fontFamily: "Inter_400Regular",
+                  fontSize: 12,
+                  color: theme.colors.textSecondary,
+                }}
+              >
+                All emergency services are operational
+              </Text>
+            </View>
+            <View style={{
+              width: 8,
+              height: 8,
+              borderRadius: 4,
+              backgroundColor: theme.colors.neonCyan,
+              shadowColor: theme.colors.neonCyan,
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0.8,
+              shadowRadius: 6,
+            }} />
+          </View>
+        </LinearGradient>
       </ScrollView>
-    </View>
+    </LinearGradient>
   );
 }

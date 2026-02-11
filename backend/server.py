@@ -13,7 +13,7 @@ import fal_client
 
 load_dotenv()
 
-app = FastAPI(title="Saheli Deepfake Analyzer API")
+app = FastAPI(title="MAITRI AI Safety API")
 
 # CORS configuration
 app.add_middleware(
@@ -184,10 +184,8 @@ async def basic_analysis(image_base64: str) -> Dict:
 async def health_check():
     return {
         "status": "healthy",
-        "service": "Saheli Deepfake Analyzer",
-        "ai_available": FAL_AVAILABLE,
-        "model": "llava-next",
-        "provider": "fal.ai"
+        "service": "MAITRI AI Safety API",
+        "version": "1.0.0"
     }
 
 @app.post("/api/analyze-deepfake", response_model=DeepfakeAnalysisResult)

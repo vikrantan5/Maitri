@@ -1,8 +1,8 @@
 {
 	"expo": {
-    "name": "Saheli",
-		"slug": "create-mobile-app",
-		"scheme": "createmobileapp",
+    "name": "MAITRI",
+		"slug": "maitri-safety-app",
+		"scheme": "maitri",
 		"version": "1.0.0",
 		"orientation": "portrait",
 		"icon": "./assets/images/icon.jpg",
@@ -12,10 +12,10 @@
 			"supportsTablet": true,
 			"infoPlist": {
 				"ITSAppUsesNonExemptEncryption": false,
-				"NSLocationAlwaysAndWhenInUseUsageDescription": "Saheli needs your location to provide real-time safety monitoring and alerts when you enter unsafe areas.",
-				"NSLocationWhenInUseUsageDescription": "Saheli needs your location to show nearby safety information and provide safe route navigation.",
-				"NSLocationAlwaysUsageDescription": "Saheli needs background location access to send safety alerts even when the app is closed.",
-				"NSCameraUsageDescription": "Saheli needs camera access to capture evidence photos during emergency SOS situations.",
+				"NSLocationAlwaysAndWhenInUseUsageDescription": "MAITRI needs your location to provide real-time safety monitoring and alerts when you enter unsafe areas.",
+				"NSLocationWhenInUseUsageDescription": "MAITRI needs your location to show nearby safety information and provide safe route navigation.",
+				"NSLocationAlwaysUsageDescription": "MAITRI needs background location access to send safety alerts even when the app is closed.",
+				"NSCameraUsageDescription": "MAITRI needs camera access to capture evidence photos during emergency SOS situations.",
 				"UIBackgroundModes": ["location"]
 			},
 			"config": {
