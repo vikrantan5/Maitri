@@ -16,6 +16,20 @@ export default function SOSCameraCapture({ visible, onCapture, onClose }) {
     }
   }, [visible]);
 
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
   const requestCameraPermissionAndCapture = async () => {
     try {
       // Check if Camera is available (not available on web)
