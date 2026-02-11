@@ -35,7 +35,7 @@ import LoadingScreen from "@/components/LoadingScreen";
 import ActionButton from "@/components/ActionButton";
 import TopNavbar from "@/components/TopNavbar";
 import SafetyMarkerModalEnhanced from "@/components/SafetyMarkerModalEnhanced";
-import VerificationModal from "@/components/VerificationModal";
+// import VerificationModal from "@/components/VerificationModal";
 import {
   subscribeToSafetyMarkers,
   upvoteSafetyMarker,

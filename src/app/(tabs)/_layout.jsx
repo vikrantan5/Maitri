@@ -2,7 +2,6 @@ import { Tabs } from "expo-router";
 import { Home, MapPin, User } from "lucide-react-native";
 import { useTheme } from "@/utils/useTheme";
 import { View } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 
 export default function TabLayout() {
   const theme = useTheme();
@@ -92,30 +91,6 @@ export default function TabLayout() {
               <User color={color} size={24} strokeWidth={focused ? 2.5 : 1.5} />
             </View>
           ),
-        }}
-      />
-      <Tabs.Screen
-        name="alerts"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="community"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="store"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="videos"
-        options={{
-          href: null,
         }}
       />
     </Tabs>

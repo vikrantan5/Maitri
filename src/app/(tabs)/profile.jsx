@@ -37,7 +37,6 @@ import ActionButton from "@/components/ActionButton";
 import TopNavbar from "@/components/TopNavbar";
 import { auth } from "@/config/firebaseConfig";
 import { getUserDetails } from "@/services/userService";
-import { getUserPostCount } from "@/services/communityService";
 import { getUserAlertCount } from "@/services/safetyAlertService";
 import { signOut } from "firebase/auth";
 import { router } from "expo-router";
@@ -51,7 +50,6 @@ export default function ProfileScreen() {
   const [voiceActivation, setVoiceActivation] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [postsCount, setPostsCount] = useState(0);
   const [alertsCount, setAlertsCount] = useState(0);
   const theme = useTheme();
 
@@ -65,25 +63,15 @@ export default function ProfileScreen() {
     loadUserData();
   }, []);
 
-  // Refresh post count when screen is focused
+  // Refresh alert count when screen is focused
   useFocusEffect(
     React.useCallback(() => {
       const user = auth.currentUser;
       if (user) {
-        loadPostCount(user.uid);
         loadAlertCount(user.uid);
       }
     }, [])
   );
-
-  const loadPostCount = async (userId) => {
-    try {
-      const count = await getUserPostCount(userId);
-      setPostsCount(count);
-    } catch (error) {
-      console.error("Error loading post count:", error);
-    }
-  };
 
   const loadAlertCount = async (userId) => {
     try {
@@ -117,8 +105,7 @@ export default function ProfileScreen() {
           occupation: userDetails?.occupation || "",
         });
 
-        // Load post count
-        await loadPostCount(user.uid);
+        // Load alert count
         await loadAlertCount(user.uid);
       }
     } catch (error) {
@@ -338,14 +325,13 @@ export default function ProfileScreen() {
             <View
               style={{
                 flexDirection: "row",
-                flexWrap: "wrap",
+                justifyContent: "space-around",
                 paddingTop: 16,
                 borderTopWidth: 1,
                 borderTopColor: theme.colors.divider,
-                gap: 12,
               }}
             >
-              <View style={{ alignItems: "center", minWidth: "30%" }}>
+              <View style={{ alignItems: "center" }}>
                 <Text
                   style={{
                     fontFamily: "Inter_600SemiBold",
@@ -366,28 +352,7 @@ export default function ProfileScreen() {
                   Emergency{"\n"}Contacts
                 </Text>
               </View>
-              <View style={{ alignItems: "center", minWidth: "30%" }}>
-                <Text
-                  style={{
-                    fontFamily: "Inter_600SemiBold",
-                    fontSize: 20,
-                    color: theme.colors.text,
-                  }}
-                >
-                  {postsCount}
-                </Text>
-                <Text
-                  style={{
-                    fontFamily: "Inter_400Regular",
-                    fontSize: 11,
-                    color: theme.colors.textSecondary,
-                    textAlign: "center",
-                  }}
-                >
-                  Community{"\n"}Posts
-                </Text>
-              </View>
-              <View style={{ alignItems: "center", minWidth: "30%" }}>
+              <View style={{ alignItems: "center" }}>
                 <Text
                   style={{
                     fontFamily: "Inter_600SemiBold",
@@ -610,21 +575,6 @@ export default function ProfileScreen() {
               title="Help & Support"
               subtitle="Get help and access safety resources"
               onPress={handleSupport}
-            />
-
-            <View
-              style={{
-                height: 1,
-                backgroundColor: theme.colors.divider,
-                marginVertical: 8,
-              }}
-            />
-
-            <SettingItem
-              icon={Users}
-              title="Community Guidelines"
-              subtitle="Learn about safe community participation"
-              onPress={() => Alert.alert("Guidelines", "Community safety guidelines and best practices.")}
             />
           </View>
         </View>
