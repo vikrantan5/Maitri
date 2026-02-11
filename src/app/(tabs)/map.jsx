@@ -70,8 +70,8 @@ export default function SafetyMapScreen() {
   const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
   const [locationMonitoring, setLocationMonitoring] = useState(null);
   const [pendingVerifications, setPendingVerifications] = useState([]);
-  const [showVerificationModal, setShowVerificationModal] = useState(false);
-  const [selectedMarkerForVerification, setSelectedMarkerForVerification] = useState(null);
+  // const [showVerificationModal, setShowVerificationModal] = useState(false);
+  // const [selectedMarkerForVerification, setSelectedMarkerForVerification] = useState(null);
   const theme = useTheme();
 
   const [fontsLoaded] = useFonts({
@@ -193,8 +193,14 @@ export default function SafetyMapScreen() {
   };
 
   const handleVerifyMarker = (marker) => {
-    setSelectedMarkerForVerification(marker);
-    setShowVerificationModal(true);
+    // Verification modal removed - show alert instead
+    Alert.alert(
+      "Verification Feature",
+      "Marker verification is currently unavailable.",
+      [{ text: "OK" }]
+    );
+    // setSelectedMarkerForVerification(marker);
+    // setShowVerificationModal(true);
   };
 
   const handleRouteSelect = (routeType) => {
@@ -754,8 +760,8 @@ export default function SafetyMapScreen() {
         coordinates={selectedCoordinates}
       />
 
-      {/* Verification Modal */}
-      <VerificationModal
+      {/* Verification Modal - Temporarily removed */}
+      {/* <VerificationModal
         visible={showVerificationModal}
         onClose={() => {
           setShowVerificationModal(false);
@@ -764,7 +770,7 @@ export default function SafetyMapScreen() {
           checkPendingVerifications();
         }}
         marker={selectedMarkerForVerification}
-      />
+      /> */}
     </View>
   );
 }
