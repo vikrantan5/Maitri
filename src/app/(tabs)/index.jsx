@@ -243,22 +243,30 @@ export default function HomeScreen() {
           >
             {/* Outer glow ring */}
             <Animated.View
-              style={{
-                position: 'absolute',
-                width: 240,
-                height: 240,
-                borderRadius: 120,
-                backgroundColor: 'transparent',
-                borderWidth: 3,
-                borderColor: theme.colors.neonCyan,
-                opacity: glowOpacity,
-                shadowColor: theme.colors.neonCyan,
-                shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 1,
-                shadowRadius: 30,
-                elevation: 10,
-              }}
-            />
+  style={{
+    position: "absolute",
+
+    // center glow ring
+    top: -10,
+    left: -10,
+
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+
+    backgroundColor: "transparent",
+    borderWidth: 3,
+    borderColor: theme.colors.neonCyan,
+    opacity: glowOpacity,
+
+    shadowColor: theme.colors.neonCyan,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 30,
+    elevation: 10,
+  }}
+/>
+
             
             <TouchableOpacity
               data-testid="sos-button"

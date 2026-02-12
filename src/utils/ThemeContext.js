@@ -96,7 +96,7 @@ export const ThemeProvider = ({ children }) => {
       tabBarInactive: actualColorScheme === 'dark' ? 'rgba(255, 255, 255, 0.6)' : '#6B6B6B',
       
       // Special colors (these remain mostly the same but slightly adjusted)
-      success: actualColorScheme === 'dark' ? '#4ADE80' : '#25B869',
+      success: actualColorScheme === 'dark' ? '#4a80de' : '#350579',
       error: actualColorScheme === 'dark' ? '#F87171' : '#E04444',
       warning: actualColorScheme === 'dark' ? '#FBBF24' : '#F59E0B',
       
@@ -112,6 +112,19 @@ export const ThemeProvider = ({ children }) => {
       // Disabled states
       disabled: actualColorScheme === 'dark' ? '#3A3A3A' : '#E6E6E6',
       disabledText: actualColorScheme === 'dark' ? 'rgba(255, 255, 255, 0.3)' : '#9A9A9A',
+      
+      // MAITRI Neon Theme Colors
+      neonCyan: '#00E5FF',
+      neonPink: '#FF2D95',
+      neonPurple: '#9C27FF',
+      glowColor: '#00E5FF',
+      shadowColor: '#000000',
+      
+      // Gradients (arrays for LinearGradient)
+      backgroundGradient: actualColorScheme === 'dark' 
+        ? ['#0A0E27', '#1A1F3A', '#0F1629'] 
+        : ['#FFFFFF', '#F5F5F5', '#ECECEC'],
+      sosGradient: ['#FF2D95', '#FF6B9D', '#9C27FF'],
     },
   };
 
