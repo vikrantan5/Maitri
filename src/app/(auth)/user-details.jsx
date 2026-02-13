@@ -17,6 +17,7 @@ import { saveUserDetails } from '../../services/userService';
 import { LinearGradient } from 'expo-linear-gradient';
 import { User, MapPin, Briefcase, Phone, X } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { trackEvent, trackAppInstall, ANALYTICS_EVENTS } from '@/services/analyticsService';
 
 export default function UserDetailsScreen() {
   const insets = useSafeAreaInsets();
@@ -94,6 +95,10 @@ export default function UserDetailsScreen() {
         occupation: occupation.trim(),
         emergencyContacts: formattedContacts,
       });
+
+      // Track user registration and app installation
+      await trackEvent(ANALYTICS_EVENTS.USER_REGISTERED);
+      await trackAppInstall();
 
       Alert.alert(
         'Success',

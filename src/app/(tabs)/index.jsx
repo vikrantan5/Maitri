@@ -28,13 +28,17 @@ import {
   Bell,
   Shield,
   AlertCircle,
+  Volume2,
 } from "lucide-react-native";
 import { router } from "expo-router";
 import { useTheme } from "@/utils/useTheme";
 import LoadingScreen from "@/components/LoadingScreen";
 import SOSCameraCapture from "@/components/SOSCameraCapture";
+import AlarmOverlay from "@/components/AlarmOverlay";
 import { triggerSOS } from "@/services/sosService";
 import { getCurrentLocation } from "@/services/locationService";
+import { useLoudAlarm } from "@/hooks/useLoudAlarm";
+import { trackEvent, trackSOSActivation, trackAlarmActivation, ANALYTICS_EVENTS } from "@/services/analyticsService";
 
 const { width } = Dimensions.get('window');
 
@@ -44,6 +48,9 @@ export default function HomeScreen() {
   const [sosCountdown, setSOSCountdown] = useState(5);
   const [showCamera, setShowCamera] = useState(false);
   const theme = useTheme();
+  
+  // Loud Alarm hook
+  const { isAlarmActive, startAlarm, stopAlarm } = useLoudAlarm();
   
   // Pulse animation for SOS button
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -55,6 +62,11 @@ export default function HomeScreen() {
     Inter_600SemiBold,
     Inter_700Bold,
   });
+
+  // Track app open on mount
+  useEffect(() => {
+    trackEvent(ANALYTICS_EVENTS.APP_OPENED);
+  }, []);
 
   useEffect(() => {
     // Start continuous pulse animation for SOS button
@@ -129,6 +141,10 @@ export default function HomeScreen() {
       );
 
       const result = await triggerSOS(photoUri);
+      
+      // Track SOS activation in analytics
+      await trackSOSActivation(result);
+      
       let message = "Emergency protocols activated:\n\n";
       
       if (result.photoCapture && !result.photoCapture.skipped) {
@@ -168,6 +184,16 @@ export default function HomeScreen() {
     }
   };
 
+  const handleLoudAlarmPress = async () => {
+    if (isAlarmActive) {
+      stopAlarm();
+    } else {
+      await startAlarm();
+      // Track alarm activation
+      await trackAlarmActivation();
+    }
+  };
+
   if (!fontsLoaded) {
     return <LoadingScreen />;
   }
@@ -192,6 +218,11 @@ export default function HomeScreen() {
           setIsSOSActive(false);
           setSOSCountdown(5);
         }}
+      />
+
+      <AlarmOverlay
+        visible={isAlarmActive}
+        onStop={stopAlarm}
       />
 
       <ScrollView
@@ -374,7 +405,7 @@ export default function HomeScreen() {
             <View style={{ height: 2, flex: 1, backgroundColor: theme.colors.borderLight }} />
           </View>
 
-          {/* 2x2 Grid */}
+          {/* 2x3 Grid */}
           <View style={{ flexDirection: 'row', gap: 16, marginBottom: 16 }}>
             {/* Fake Call */}
             <TouchableOpacity
@@ -462,7 +493,50 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
 
-          <View style={{ flexDirection: 'row', gap: 16 }}>
+          <View style={{ flexDirection: 'row', gap: 16, marginBottom: 16 }}>
+            {/* Loud Alarm */}
+            <TouchableOpacity
+              data-testid="loud-alarm-button"
+              style={{ flex: 1 }}
+              onPress={handleLoudAlarmPress}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={isAlarmActive ? ['#FFD700', '#FF8C00'] : ['rgba(255, 165, 0, 0.2)', 'rgba(255, 140, 0, 0.1)']}
+                style={{
+                  borderRadius: 20,
+                  padding: 20,
+                  alignItems: 'center',
+                  borderWidth: 1,
+                  borderColor: isAlarmActive ? '#FFD700' : theme.colors.borderLight,
+                  minHeight: 140,
+                  justifyContent: 'center',
+                }}
+              >
+                <View style={{
+                  width: 50,
+                  height: 50,
+                  borderRadius: 25,
+                  backgroundColor: isAlarmActive ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 165, 0, 0.2)',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  marginBottom: 12,
+                }}>
+                  <Volume2 size={26} color={isAlarmActive ? '#FFFFFF' : theme.colors.warning} strokeWidth={2} />
+                </View>
+                <Text
+                  style={{
+                    fontFamily: "Inter_600SemiBold",
+                    fontSize: 15,
+                    color: isAlarmActive ? '#000000' : theme.colors.text,
+                    textAlign: 'center',
+                  }}
+                >
+                  {isAlarmActive ? 'Stop Alarm' : 'Loud Alarm'}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
             {/* Safe Routes */}
             <TouchableOpacity
               style={{ flex: 1 }}
@@ -504,7 +578,9 @@ export default function HomeScreen() {
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
+          </View>
 
+          <View style={{ flexDirection: 'row', gap: 16 }}>
             {/* Emergency Contacts */}
             <TouchableOpacity
               style={{ flex: 1 }}
@@ -546,6 +622,9 @@ export default function HomeScreen() {
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
+
+            {/* Empty slot for future feature or leave as is */}
+            <View style={{ flex: 1 }} />
           </View>
         </View>
 

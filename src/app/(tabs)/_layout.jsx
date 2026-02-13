@@ -1,10 +1,22 @@
 import { Tabs } from "expo-router";
-import { Home, MapPin, User } from "lucide-react-native";
+import { Home, MapPin, User, Shield } from "lucide-react-native";
 import { useTheme } from "@/utils/useTheme";
 import { View } from "react-native";
+import { useState, useEffect } from "react";
+import { isAdmin } from "@/utils/adminUtils";
 
 export default function TabLayout() {
   const theme = useTheme();
+  const [userIsAdmin, setUserIsAdmin] = useState(false);
+
+  useEffect(() => {
+    checkAdminStatus();
+  }, []);
+
+  const checkAdminStatus = async () => {
+    const adminStatus = await isAdmin();
+    setUserIsAdmin(adminStatus);
+  };
 
   return (
     <Tabs
@@ -93,6 +105,27 @@ export default function TabLayout() {
           ),
         }}
       />
+      {userIsAdmin && (
+        <Tabs.Screen
+          name="admin"
+          options={{
+            title: "Admin",
+            href: "/admin-dashboard",
+            tabBarIcon: ({ color, size, focused }) => (
+              <View style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: focused ? 'rgba(255, 215, 0, 0.15)' : 'transparent',
+              }}>
+                <Shield color={color} size={24} strokeWidth={focused ? 2.5 : 1.5} />
+              </View>
+            ),
+          }}
+        />
+      )}
     </Tabs>
   );
 }
