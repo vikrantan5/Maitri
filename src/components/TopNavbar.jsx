@@ -63,7 +63,7 @@ export default function TopNavbar({ title = 'MAITRI' }) {
 
       {/* Bell Icon - Right */}
       <TouchableOpacity
-        onPress={() => router.push('/(tabs)/alerts')}
+        onPress={() => router.push('/(tabs)/profile')}
         style={{
           width: 42,
           height: 42,

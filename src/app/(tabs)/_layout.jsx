@@ -20,7 +20,7 @@ export default function TabLayout() {
           position: 'absolute',
           borderRadius: 24,
           marginHorizontal: 16,
-          marginBottom: 16,
+          marginBottom: 35,
           shadowColor: theme.colors.shadowColor,
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.3,

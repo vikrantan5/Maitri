@@ -2,21 +2,22 @@ require('dotenv').config();
 
 module.exports = {
   expo: {
-    name: "Saheli",
+    owner: "vik4an5",
+    name: "Maitri",
     slug: "create-mobile-app",
     scheme: "createmobileapp",
     version: "1.0.0",
     orientation: "portrait",
-    icon: "./assets/images/icon.jpg",
+    icon: "./assets/images/icon.png",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
     ios: {
       supportsTablet: true,
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
-        NSLocationAlwaysAndWhenInUseUsageDescription: "Saheli needs your location to provide real-time safety monitoring and alerts when you enter unsafe areas.",
-        NSLocationWhenInUseUsageDescription: "Saheli needs your location to show nearby safety information and provide safe route navigation.",
-        NSLocationAlwaysUsageDescription: "Saheli needs background location access to send safety alerts even when the app is closed.",
+        NSLocationAlwaysAndWhenInUseUsageDescription: "Maitri needs your location to provide real-time safety monitoring and alerts when you enter unsafe areas.",
+        NSLocationWhenInUseUsageDescription: "Maitri needs your location to show nearby safety information and provide safe route navigation.",
+        NSLocationAlwaysUsageDescription: "Maitri needs background location access to send safety alerts even when the app is closed.",
         UIBackgroundModes: ["location"]
       },
       config: {
@@ -78,21 +79,26 @@ module.exports = {
       typedRoutes: true
     },
     extra: {
-      router: {
-        origin: false
-      },
-      // Make environment variables available in the app
-      firebaseApiKey: process.env.FIREBASE_API_KEY,
-      firebaseAuthDomain: process.env.FIREBASE_AUTH_DOMAIN,
-      firebaseProjectId: process.env.FIREBASE_PROJECT_ID,
-      firebaseStorageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-      firebaseMessagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-      firebaseAppId: process.env.FIREBASE_APP_ID,
-      firebaseMeasurementId: process.env.FIREBASE_MEASUREMENT_ID,
-      googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
-      razorpayKeyId: process.env.RAZORPAY_KEY_ID,
-      razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET
-    },
+  eas: {
+    projectId: "e728f197-d8f0-4da7-a9c4-03c72e7fa42b"
+  },
+  router: {
+    origin: false
+  },
+
+  // Make environment variables available in the app
+  firebaseApiKey: process.env.FIREBASE_API_KEY,
+  firebaseAuthDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  firebaseProjectId: process.env.FIREBASE_PROJECT_ID,
+  firebaseStorageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  firebaseMessagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+  firebaseAppId: process.env.FIREBASE_APP_ID,
+  firebaseMeasurementId: process.env.FIREBASE_MEASUREMENT_ID,
+  googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
+  razorpayKeyId: process.env.RAZORPAY_KEY_ID,
+  razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET
+},
+
     runtimeVersion: {
       policy: "appVersion"
     }

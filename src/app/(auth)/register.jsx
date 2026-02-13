@@ -106,7 +106,7 @@ export default function RegisterScreen() {
             <View style={styles.logoContainer}>
               <Shield size={60} color="#FFFFFF" strokeWidth={2} />
             </View>
-            <Text style={styles.title}>Saheli</Text>
+            <Text style={styles.title}>Maitri</Text>
             <Text style={styles.subtitle}>Women Safety First</Text>
           </View>
 
